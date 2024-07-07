@@ -1,0 +1,10 @@
+langchain_openai
+langchain-community
+streamlit
+pandas
+altair
+plotly
+langchain
+mlflow==2.12.1
+tiktoken
+openai
