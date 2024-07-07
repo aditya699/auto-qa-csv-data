@@ -8,3 +8,9 @@ langchain
 mlflow==2.12.1
 tiktoken
 openai
+python-dotenv
+langchain_core
+langchain-google-genai
+pillow
+langchain-experimental
+matplotlib
