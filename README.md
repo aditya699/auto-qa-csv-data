@@ -1,5 +1,5 @@
 # auto-dashboard
-This is an attempt to create a dashboard using generative.AI
+This is an attempt to create a charts using generative.AI
 
 # Demo
 
