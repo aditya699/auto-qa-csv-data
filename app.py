@@ -2,12 +2,13 @@
 Author    -Aditya Bhatt 8:13 PM 07-07-2024
 
 Objective -
-1.Is it possible to create a dashboard when you are given any cleaned dataset.
+1.Create a tool that will automate dashboard generation using LLM's..
 '''
 #Import Library
 import os
 import mlflow
 import pandas as pd
+import streamlit as st
 from langchain.chains import LLMChain
 from langchain.prompts import PromptTemplate
 from langchain_openai import AzureChatOpenAI
@@ -53,7 +54,20 @@ prefix= '''I have a pandas DataFrame 'df' with columns country, gdp, year, and p
 suffix='''Return only the Python code snippet in Markdown format. The output should be directly executable in a Python interpreter.
 '''
 
-query="Plot a chart to show how population has changed with time."
+query='''
+Plot a chart to show how population has changed with time (the code should be using streamlit) 
+
+Example
+import streamlit as st
+
+import pandas as pd
+import numpy as np
+
+chart_data = pd.DataFrame(np.random.randn(20, 3), columns=["a", "b", "c"])
+
+st.line_chart(chart_data)
+
+'''
 
 input_query=prefix+"Return code for the following question: "+query+suffix
 res_google=chain_google.invoke({"input": input_query})
@@ -65,8 +79,8 @@ print(res_google.content)
 
 print("Results from Azure OPENAI...")
 print("\n")
-tool.invoke(res_azureopenai.content)
-
+result=tool.invoke(res_azureopenai.content)
+st.write(result)
 print("\n")
 print("Results from Google...")
-tool.invoke(res_google.content)
+print(tool.invoke(res_google.content))
