@@ -5,7 +5,6 @@ Objective -
 1. Create a tool that will automate dashboard generation using LLM's.
 '''
 
-# Import Libraries
 import os
 import pandas as pd
 import streamlit as st
@@ -58,46 +57,59 @@ st.pyplot(fig) # instead of plt.show()
 '''
 
 def main():
-    st.title("Automated Charts Generation Tool")
+    st.title("CSV Chatbot")
     
-    # Initialize session state
-    if "queries" not in st.session_state:
-        st.session_state.queries = []
-        st.session_state.results_google = []
-        st.session_state.results_azure = []
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-    input_user = st.text_input("Enter your question (end to end chat)", key="query_input")
-    if st.button("Submit"):
-        query = input_user
-        if query:
-            input_query = prefix + "Return code for the following question: " + query + suffix
-            res_google = chain_google.invoke({"input": input_query})
-            res_azureopenai = chain_azure.invoke({"input": input_query})
+    # Display chat messages from history on app rerun
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
-            st.session_state.queries.append(query)
-            st.session_state.results_google.append(res_google.content)
-            st.session_state.results_azure.append(res_azureopenai.content)
+    # React to user input
+    if prompt := st.chat_input("Ask a question about the data"):
+        # Display user message in chat message container
+        st.chat_message("user").markdown(prompt)
+        # Add user message to chat history
+        st.session_state.messages.append({"role": "user", "content": prompt})
 
-    for i, query in enumerate(st.session_state.queries):
-        st.subheader(f"Query {i+1}: {query}")
+        input_query = prefix + "Return code for the following question: " + prompt + suffix
         
-        st.subheader("Results from Google Gemini:")
-        st.markdown(st.session_state.results_google[i], unsafe_allow_html=True)
-        
-        st.subheader("Results from Azure OpenAI:")
-        st.markdown(st.session_state.results_azure[i], unsafe_allow_html=True)
-        
-        tool = PythonAstREPLTool(locals={"df": df})
-        
-        try:
-            exec_code = tool.invoke(st.session_state.results_azure[i])
-        except Exception as e:
-            st.error(f"Error executing Azure OpenAI code: {e}")
+        # Get responses from Google Gemini and Azure OpenAI
+        res_google = chain_google.invoke({"input": input_query})
+        res_azureopenai = chain_azure.invoke({"input": input_query})
+
+        # Display assistant responses in chat message containers
+        with st.chat_message("assistant"):
+            st.markdown("### Google Gemini Response:")
+            st.markdown(res_google.content)
             
-        try:
-            exec_code = tool.invoke(st.session_state.results_google[i])
-        except Exception as e:
-            st.error(f"Error executing Google Gemini code: {e}")
+            st.markdown("### Azure OpenAI Response:")
+            st.markdown(res_azureopenai.content)
+
+            # Execute the code and display results
+            tool = PythonAstREPLTool(locals={"df": df})
+            
+            st.markdown("### Execution Results:")
+            try:
+                exec_code = tool.invoke(res_azureopenai.content)
+                st.success("Azure OpenAI code executed successfully")
+            except Exception as e:
+                st.error(f"Error executing Azure OpenAI code: {e}")
+            
+            try:
+                exec_code = tool.invoke(res_google.content)
+                st.success("Google Gemini code executed successfully")
+            except Exception as e:
+                st.error(f"Error executing Google Gemini code: {e}")
+
+        # Add assistant response to chat history
+        st.session_state.messages.append({
+            "role": "assistant", 
+            "content": f"Google Gemini Response:\n{res_google.content}\n\nAzure OpenAI Response:\n{res_azureopenai.content}"
+        })
 
 if __name__ == "__main__":
     main()
